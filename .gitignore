@@ -121,7 +121,8 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments
+# ironments
+mastodo_streamer/.env
 .env
 .venv
 env/
