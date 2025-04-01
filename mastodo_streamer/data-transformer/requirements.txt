@@ -1,0 +1,5 @@
+pymongo~=4.11.2
+pandas~=2.2.3
+pytz~=2025.1
+python-dotenv~=1.0.1
+schedule~=1.2.1

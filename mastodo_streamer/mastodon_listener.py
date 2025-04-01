@@ -1,14 +1,22 @@
 from mastodon import Mastodon, StreamListener
 from pymongo import MongoClient
+from dotenv import load_dotenv
+import os
 from config import Config
 import json
 
 
 class MastodonListener(StreamListener):
     def __init__(self, collection_name):
-        client = MongoClient('mongodb://root:example@mongo:27017/')    #USE FOR DOCKER
-        #client = MongoClient('mongodb://root:example@localhost:27017/') #USE FOR LOCAL
-        db = client['mastodon_db']
+
+        #dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.env')
+        #load_dotenv(dotenv_path)
+
+        mongo_uri = os.getenv('MONGO_URI')
+        mongo_db_name = os.getenv('MONGO_DB_B')
+
+        client = MongoClient(mongo_uri)    #USE FOR DOCKER
+        db = client[mongo_db_name]
         self.collection = db[collection_name]  # Each instance has its own collection
 
 
@@ -16,7 +24,7 @@ class MastodonListener(StreamListener):
         status_data = {
             'id': status.id,
             'created_at': status.created_at.isoformat(),
-            'username': status.account.username,
+            'username': None,
             'user_id': status.account.id,
             'user_bot': status.account.bot,
             'visibility': status.visibility,

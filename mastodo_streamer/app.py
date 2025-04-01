@@ -6,13 +6,19 @@ import time
 from mastodon_listener import start_stream_for_instance
 from config import Config
 from pymongo import MongoClient
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 
+dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.env')
+load_dotenv(dotenv_path)
+
+mongo_uri = os.getenv('MONGO_URI')
+mongo_db_name = os.getenv('MONGO_DB_B')
+
 # MongoDB client setup
-mongo_client = MongoClient('mongodb://root:example@mongo:27017/')  # Use for Docker
-#mongo_client = MongoClient('mongodb://root:example@localhost:27017/')  # Use for Local
-db = mongo_client['mastodon_db']
+mongo_client = MongoClient(mongo_uri)  # Use for Docker
+db = mongo_client[mongo_db_name]
 
 
 # Function to start streaming for all configured Mastodon instances
