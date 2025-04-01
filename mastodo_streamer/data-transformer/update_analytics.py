@@ -1,4 +1,3 @@
-# update_analytics.py
 from pymongo import MongoClient
 import pandas as pd
 from datetime import datetime, timedelta
@@ -6,13 +5,12 @@ import pytz
 from dotenv import load_dotenv
 import os
 
-dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.env')
-load_dotenv(dotenv_path)
+# dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.env')
+# load_dotenv(dotenv_path)
 
 mongo_uri = os.getenv('MONGO_URI')
 mongo_db_name_A = os.getenv('MONGO_DB_A')
 mongo_db_name_B = os.getenv('MONGO_DB_B')
-
 
 client = MongoClient(mongo_uri)
 
@@ -31,22 +29,26 @@ utc = pytz.utc
 cet = pytz.timezone("Europe/Berlin")
 
 current_utc_date = datetime.now(utc).date()
+start_limit = datetime.combine(current_utc_date - timedelta(days=14), datetime.min.time()).isoformat()
+end_limit = datetime.combine(current_utc_date, datetime.min.time()).isoformat()
 
 # Get all unique dates present in `mastodon_db`
 existing_dates = set()
 for collection_name in collection_names:
     collection = raw_db[collection_name]
-
-    # Get timestamps of all posts
-    cursor = collection.find({}, {"_id": 0, "created_at": 1})
-    df = pd.DataFrame(list(cursor))
-
-    if not df.empty:
-        df["created_at"] = pd.to_datetime(df["created_at"], format="ISO8601").dt.strftime("%Y-%m-%d")
-        existing_dates.update(df["created_at"].unique())
-
-# Remove today's date from processing (only process finished days)
-existing_dates = {d for d in existing_dates if d < current_utc_date.strftime("%Y-%m-%d")}
+    cursor = collection.find(
+        {"created_at": {"$gte": start_limit, "$lt": end_limit}},
+        {"_id": 0, "created_at": 1}
+    ).batch_size(1000)
+    for doc in cursor:
+        try:
+            if "created_at" in doc:
+                date = pd.to_datetime(doc["created_at"], errors='coerce')
+                if pd.notna(date):
+                    date_str = date.strftime("%Y-%m-%d")
+                    existing_dates.add(date_str)
+        except Exception as e:
+            print(f"Error parsing date in collection {collection_name}:", e)
 
 # Get all unique dates already in `analytics_db`
 analytics_dates_posts = set(postsperday_collection.distinct("date"))
@@ -63,7 +65,7 @@ postsperday_data = []
 dailyactiveusers_data = []
 averageuseractivity_data = []
 
-for missing_date in sorted(set(missing_dates_posts + missing_dates_users + missing_dates_avg)):  # Combine missing dates
+for missing_date in sorted(set(missing_dates_posts + missing_dates_users + missing_dates_avg)):
     start_time = datetime.strptime(missing_date, "%Y-%m-%d").replace(tzinfo=utc)
     end_time = start_time + timedelta(days=1)
 
@@ -83,7 +85,6 @@ for missing_date in sorted(set(missing_dates_posts + missing_dates_users + missi
         # Calculate average user activity (posts per active user)
         avg_activity = round(post_count / unique_users, 2) if unique_users > 0 else 0
 
-        # Store post count
         if missing_date in missing_dates_posts:
             postsperday_data.append({
                 "date": missing_date,
@@ -91,7 +92,6 @@ for missing_date in sorted(set(missing_dates_posts + missing_dates_users + missi
                 "post_count": post_count
             })
 
-        # Store unique active user count
         if missing_date in missing_dates_users:
             dailyactiveusers_data.append({
                 "date": missing_date,
@@ -99,7 +99,6 @@ for missing_date in sorted(set(missing_dates_posts + missing_dates_users + missi
                 "active_users": unique_users
             })
 
-        # Store average user activity
         if missing_date in missing_dates_avg:
             averageuseractivity_data.append({
                 "date": missing_date,

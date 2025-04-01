@@ -6,7 +6,7 @@ from pymongo import MongoClient
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.figure_factory as ff
-from datetime import datetime
+from datetime import datetime, timedelta
 import networkx as nx
 import scipy as sp
 from dotenv import load_dotenv
@@ -31,11 +31,27 @@ averageuseractivity_collection = analytics_db['averageuseractivity']
 
 # Define layout
 app.layout = html.Div(children=[
-    # Modern, Centered Heading
-    html.H1(
-        "Mastodon Data Dashboard",
-        style={"textAlign": "center", "font-family": "Arial, sans-serif", "font-size": "25px", "margin-bottom": "10px"}
-    ),
+    # Header row with GitHub icon on the left and title centered
+    html.Div([
+        html.A(
+            html.Img(
+                src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+                style={"height": "25px", "margin-right": "10px"}
+            ),
+            href="https://github.com/dremyyy/mastodon_master",
+            target="_blank"
+        ),
+        html.H1(
+            "Mastodon Data Dashboard",
+            style={"textAlign": "center", "flex": "1", "font-family": "Arial, sans-serif", "font-size": "25px", "margin": "0"}
+        )
+    ], style={
+        "display": "flex",
+        "align-items": "center",
+        "justify-content": "center",
+        "gap": "10px",
+        "margin-bottom": "10px"
+    }),
 
     # Tabs for switching between views
     dcc.Tabs(
@@ -48,7 +64,7 @@ app.layout = html.Div(children=[
         style={"font-size": "16px", "font-family": "Arial, sans-serif", "line-height": "0px"}
     ),
 
-    # **Content that updates based on selected tab**
+    # Content that updates based on selected tab
     html.Div(id="tab-content")
 ])
 
@@ -66,9 +82,9 @@ def render_tab_content(selected_tab):
                 dcc.DatePickerRange(
                     id="date-range-picker",
                     min_date_allowed=datetime(2025, 1, 7),
-                    max_date_allowed=datetime.now(),
-                    start_date=datetime.now().replace(day=1).strftime("%Y-%m-%d"),
-                    end_date=datetime.now().strftime("%Y-%m-%d")
+                    max_date_allowed=(datetime.now() - timedelta(days=1)),
+                    start_date=(datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),
+                    end_date=(datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
                 ),
             ], style={"textAlign": "center", "margin-bottom": "0px", "margin-top": "15px", "padding": "0px 0px", "height": "5px", "font-family": "Arial, sans-serif"}),
 
@@ -100,10 +116,10 @@ def render_tab_content(selected_tab):
             html.Div([
                 dcc.DatePickerRange(
                     id="correlation-date-picker",
-                    min_date_allowed=datetime(2023, 1, 1),
-                    max_date_allowed=datetime.now(),
-                    start_date=datetime.now().replace(day=1).strftime("%Y-%m-%d"),
-                    end_date=datetime.now().strftime("%Y-%m-%d")
+                    min_date_allowed=datetime(2025, 1, 7),
+                    max_date_allowed=(datetime.now() - timedelta(days=1)),
+                    start_date=(datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),
+                    end_date=(datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
                 ),
             ], style={"font-size": "5px", "textAlign": "center", "margin-bottom": "0px", "margin-top": "15px", "padding": "0px 0px", "height": "5px", "font-family": "Arial, sans-serif"}),
 
@@ -145,7 +161,7 @@ def render_tab_content(selected_tab):
      Output("avg-user-activity-line-chart", "figure")],
     [Input("date-range-picker", "start_date"),
      Input("date-range-picker", "end_date"),
-     Input("data-ema-toggle", "value")]  # ✅ Added EMA toggle
+     Input("data-ema-toggle", "value")]
 )
 def update_data_charts(start_date, end_date, ema_option):
     """Fetch precomputed post counts, active users, and avg user activity per day with optional EMA."""
