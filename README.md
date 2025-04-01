@@ -1,6 +1,6 @@
 # mastodon_masters
 
-## How to use/run
+## How to use/run (OUTDATED/COMING SOON)
 
  1. Clone Repo
  2. cd /mastodo_streamer
