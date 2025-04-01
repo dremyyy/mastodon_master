@@ -1,8 +1,3 @@
-#Instances without a way to make an account: det.social, infosec.exchange  (beantragt), mastodon.online, fasstodon.org
-#Instances that dont support streaming: loforo.com
-#Ignored because of questionable timelines: aethy.com
-#Ignored because collectiond data is explicitly forbidden: m.cmx.im
-#Ignored because no gmail allowed: troet.cafe
 
 NUM_INSTANCES=10
 

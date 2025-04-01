@@ -88,7 +88,7 @@ def render_tab_content(selected_tab):
                 ),
             ], style={"textAlign": "center", "margin-bottom": "0px", "margin-top": "15px", "padding": "0px 0px", "height": "5px", "font-family": "Arial, sans-serif"}),
 
-            # **Checkbox for EMA selection (Only in Data Tab)**
+            # Checkbox for EMA selection (Only in Data Tab)
             html.Div([
                 dcc.Checklist(
                     id="data-ema-toggle",
@@ -188,7 +188,7 @@ def update_data_charts(start_date, end_date, ema_option):
     active_users_per_day = df_users.pivot(index="date", columns="instance", values="active_users").fillna(0) if not df_users.empty else None
     avg_user_activity_per_day = df_avg_activity.pivot(index="date", columns="instance", values="avg_posts_per_user").fillna(0) if not df_avg_activity.empty else None
 
-    # **Apply 7-day EMA if checkbox is checked**
+    # Apply 7-day EMA if checkbox is checked
     if "ema" in ema_option:
         if posts_per_day is not None:
             posts_per_day = posts_per_day.ewm(span=7, adjust=False).mean()
@@ -207,7 +207,14 @@ def update_data_charts(start_date, end_date, ema_option):
     ]:
         if df is not None:
             for instance in df.columns:
-                fig.add_trace(go.Scatter(x=df.index, y=df[instance], mode="lines+markers", name=instance))
+                fig.add_trace(go.Scatter(
+                    x=df.index,
+                    y=df[instance],
+                    mode="lines+markers",
+                    name=instance,
+                    hovertemplate=f"<b>{instance}</b><br>Date: %{{x}}<br>Value: %{{y}}<extra></extra>"
+
+                ))
             fig.update_layout(title=title, yaxis_title=y_title, height=600)
 
     return fig_posts, fig_users, fig_avg_activity
@@ -252,7 +259,7 @@ def update_correlation_analysis(start_date, end_date, ema_option, data_type):
 
     correlation_matrix = selected_data_per_day.corr(method='spearman')
 
-    # **Create Heatmap with Labels**
+    # Create Heatmap with Labels
     fig_heatmap = go.Figure(data=go.Heatmap(
         z=correlation_matrix.values,
         x=correlation_matrix.columns.tolist(),
@@ -263,7 +270,7 @@ def update_correlation_analysis(start_date, end_date, ema_option, data_type):
         hoverongaps=False
     ))
 
-    # **Add Text Annotations to Each Cell**
+    # Add Text Annotations to Each Cell
     annotations = []
     for i in range(len(correlation_matrix.index)):
         for j in range(len(correlation_matrix.columns)):
@@ -286,7 +293,7 @@ def update_correlation_analysis(start_date, end_date, ema_option, data_type):
         height=800
     )
 
-    # **NETWORK GRAPH IMPLEMENTATION**
+    # NETWORK GRAPH IMPLEMENTATION
     G = nx.Graph()
 
     # Convert correlation matrix to adjacency matrix, treating negative correlations as 0
