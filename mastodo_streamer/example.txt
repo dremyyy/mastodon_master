@@ -1,47 +1,20 @@
 
-NUM_INSTANCES=10
+MONGO_ROOT_USER=example
+MONGO_ROOT_PASS=example_pass
+
+NUM_INSTANCES=2
 
 # Instance 1 ()
-MASTODON_ACCESS_TOKEN_1=
+MASTODON_ACCESS_TOKEN_1=ABCD12345
 MASTODON_API_BASE_URL_1=https://mstdn.social
 
 # Instance 2 ()
-MASTODON_ACCESS_TOKEN_2=
+MASTODON_ACCESS_TOKEN_2=ABCD12345
 MASTODON_API_BASE_URL_2=https://mastodon.social
 
-# Instance 3 ()
-MASTODON_ACCESS_TOKEN_3=
-MASTODON_API_BASE_URL_3=https://mas.to
-
-# Instance 4 ()
-MASTODON_ACCESS_TOKEN_4=
-MASTODON_API_BASE_URL_4=https://mastodon.world
-
-# Instance 5 ()
-MASTODON_ACCESS_TOKEN_5=
-MASTODON_API_BASE_URL_5=https://mstdn.jp
-
-# Instance 6 ()
-MASTODON_ACCESS_TOKEN_6=
-MASTODON_API_BASE_URL_6=https://hachyderm.io
-
-# Instance 7 ()
-MASTODON_ACCESS_TOKEN_7=
-MASTODON_API_BASE_URL_7=https://infosec.exchange
-
-# Instance 8 ()
-MASTODON_ACCESS_TOKEN_8=
-MASTODON_API_BASE_URL_8=https://planet.moe
-
-# Instance 9 ()
-MASTODON_ACCESS_TOKEN_9=
-MASTODON_API_BASE_URL_9=https://social.vivaldi.net
-
-# Instance 10 ()
-MASTODON_ACCESS_TOKEN_10=
-MASTODON_API_BASE_URL_10=https://techhub.social/
-
-
+# Instance n ()
+MASTODON_ACCESS_TOKEN_n=
+MASTODON_API_BASE_URL_n=
 
 
 
