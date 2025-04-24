@@ -88,11 +88,11 @@ def render_tab_content(selected_tab):
                 ),
             ], style={"textAlign": "center", "margin-bottom": "0px", "margin-top": "15px", "padding": "0px 0px", "height": "5px", "font-family": "Arial, sans-serif"}),
 
-            # Checkbox for EMA selection (Only in Data Tab)
+            # Checkbox for SMA selection (Only in Data Tab)
             html.Div([
                 dcc.Checklist(
                     id="data-ema-toggle",
-                    options=[{"label": " Use 7-Day EMA", "value": "ema"}],
+                    options=[{"label": " Use 7-Day SMA", "value": "ema"}],
                     value=[],  # Default: unchecked
                     inline=True
                 ),
@@ -123,11 +123,11 @@ def render_tab_content(selected_tab):
                 ),
             ], style={"font-size": "5px", "textAlign": "center", "margin-bottom": "0px", "margin-top": "15px", "padding": "0px 0px", "height": "5px", "font-family": "Arial, sans-serif"}),
 
-            # Checkbox for EMA selection
+            # Checkbox for SMA selection
             html.Div([
                 dcc.Checklist(
                     id="ema-toggle",
-                    options=[{"label": " Use 7-Day EMA", "value": "ema"}],
+                    options=[{"label": " Use 7-Day SMA", "value": "ema"}],
                     value=[],
                     inline=True
                 ),
@@ -164,7 +164,7 @@ def render_tab_content(selected_tab):
      Input("data-ema-toggle", "value")]
 )
 def update_data_charts(start_date, end_date, ema_option):
-    """Fetch precomputed post counts, active users, and avg user activity per day with optional EMA."""
+    """Fetch precomputed post counts, active users, and avg user activity per day with optional SMA."""
     if not start_date or not end_date:
         empty_fig = go.Figure().update_layout(title="No Data Available", height=600)
         return empty_fig, empty_fig, empty_fig
@@ -188,14 +188,14 @@ def update_data_charts(start_date, end_date, ema_option):
     active_users_per_day = df_users.pivot(index="date", columns="instance", values="active_users").fillna(0) if not df_users.empty else None
     avg_user_activity_per_day = df_avg_activity.pivot(index="date", columns="instance", values="avg_posts_per_user").fillna(0) if not df_avg_activity.empty else None
 
-    # Apply 7-day EMA if checkbox is checked
+    # Apply 7-day SMA if checkbox is checked
     if "ema" in ema_option:
         if posts_per_day is not None:
-            posts_per_day = posts_per_day.ewm(span=7, adjust=False).mean()
+            posts_per_day = posts_per_day.rolling(window=7, min_periods=1).mean()
         if active_users_per_day is not None:
-            active_users_per_day = active_users_per_day.ewm(span=7, adjust=False).mean()
+            active_users_per_day = active_users_per_day.rolling(window=7, min_periods=1).mean()
         if avg_user_activity_per_day is not None:
-            avg_user_activity_per_day = avg_user_activity_per_day.ewm(span=7, adjust=False).mean()
+            avg_user_activity_per_day = avg_user_activity_per_day.rolling(window=7, min_periods=1).mean()
 
     # Create Figures
     fig_posts, fig_users, fig_avg_activity = go.Figure(), go.Figure(), go.Figure()
@@ -255,7 +255,7 @@ def update_correlation_analysis(start_date, end_date, ema_option, data_type):
     selected_data_per_day = df_data.pivot(index="date", columns="instance", values=data_type).fillna(0)
 
     if "ema" in ema_option:
-        selected_data_per_day = selected_data_per_day.ewm(span=7, adjust=False).mean()
+        selected_data_per_day = selected_data_per_day.rolling(window=7, min_periods=1).mean()
 
     correlation_matrix = selected_data_per_day.corr(method='spearman')
 
@@ -286,7 +286,7 @@ def update_correlation_analysis(start_date, end_date, ema_option, data_type):
             )
 
     fig_heatmap.update_layout(
-        title=f"Spearman Correlation Matrix ({data_type.replace('_', ' ').title()}) {(' (7-Day EMA)' if 'ema' in ema_option else '')} ({start_date} to {end_date})",
+        title=f"Spearman Correlation Matrix ({data_type.replace('_', ' ').title()}) {(' (7-Day SMA)' if 'ema' in ema_option else '')} ({start_date} to {end_date})",
         xaxis_title="Instance",
         yaxis_title="Instance",
         annotations=annotations,
