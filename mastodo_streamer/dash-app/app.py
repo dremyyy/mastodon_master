@@ -81,7 +81,7 @@ def render_tab_content(selected_tab):
             html.Div([
                 dcc.DatePickerRange(
                     id="date-range-picker",
-                    min_date_allowed=datetime(2025, 1, 7),
+                    min_date_allowed=datetime(2024, 10, 24),
                     max_date_allowed=(datetime.now() - timedelta(days=1)),
                     start_date=(datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),
                     end_date=(datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
@@ -116,7 +116,7 @@ def render_tab_content(selected_tab):
             html.Div([
                 dcc.DatePickerRange(
                     id="correlation-date-picker",
-                    min_date_allowed=datetime(2025, 1, 7),
+                    min_date_allowed=datetime(2024, 10, 24),
                     max_date_allowed=(datetime.now() - timedelta(days=1)),
                     start_date=(datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),
                     end_date=(datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
