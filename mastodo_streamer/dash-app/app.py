@@ -191,11 +191,11 @@ def update_data_charts(start_date, end_date, ema_option):
     # Apply 7-day SMA if checkbox is checked
     if "ema" in ema_option:
         if posts_per_day is not None:
-            posts_per_day = posts_per_day.rolling(window=7, min_periods=1).mean()
+            posts_per_day = posts_per_day.rolling(window=7, min_periods=7).mean().dropna()
         if active_users_per_day is not None:
-            active_users_per_day = active_users_per_day.rolling(window=7, min_periods=1).mean()
+            active_users_per_day = active_users_per_day.rolling(window=7, min_periods=7).mean().dropna()
         if avg_user_activity_per_day is not None:
-            avg_user_activity_per_day = avg_user_activity_per_day.rolling(window=7, min_periods=1).mean()
+            avg_user_activity_per_day = avg_user_activity_per_day.rolling(window=7, min_periods=7).mean().dropna()
 
     # Create Figures
     fig_posts, fig_users, fig_avg_activity = go.Figure(), go.Figure(), go.Figure()
@@ -255,7 +255,7 @@ def update_correlation_analysis(start_date, end_date, ema_option, data_type):
     selected_data_per_day = df_data.pivot(index="date", columns="instance", values=data_type).fillna(0)
 
     if "ema" in ema_option:
-        selected_data_per_day = selected_data_per_day.rolling(window=7, min_periods=1).mean()
+        selected_data_per_day = selected_data_per_day.rolling(window=7, min_periods=7).mean().dropna()
 
     correlation_matrix = selected_data_per_day.corr(method='spearman')
 
