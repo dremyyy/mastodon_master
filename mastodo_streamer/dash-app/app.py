@@ -15,7 +15,7 @@ dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.e
 load_dotenv(dotenv_path)
 
 # Initialize Dash app
-app = dash.Dash(__name__, suppress_callback_exceptions=True,)
+app = dash.Dash(__name__, suppress_callback_exceptions=True, requests_pathname_prefix='/mastodondash/')
 
 mongo_uri = os.getenv('MONGO_URI')
 mongo_db_name = os.getenv('MONGO_DB_A')
