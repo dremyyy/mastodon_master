@@ -15,7 +15,7 @@ dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.e
 load_dotenv(dotenv_path)
 
 # Initialize Dash app
-app = dash.Dash(__name__, suppress_callback_exceptions=True, requests_pathname_prefix='/mastodondash/')
+app = dash.Dash(__name__, suppress_callback_exceptions=True,)
 
 mongo_uri = os.getenv('MONGO_URI')
 mongo_db_name = os.getenv('MONGO_DB_A')
@@ -29,9 +29,75 @@ postsperday_collection = analytics_db['postsperday']
 dailyactiveusers_collection = analytics_db['dailyactiveusers']
 averageuseractivity_collection = analytics_db['averageuseractivity']
 
-# Define layout
+# Metadata for instances
+instance_metadata = {
+    'https://mstdn.social': {'Language': 'English'},
+    'https://mastodon.social': {'Language': 'English'},
+    'https://mas.to': {'Language': 'English'},
+    'https://mastodon.world': {'Language': 'English'},
+    'https://mstdn.jp': {'Language': 'Japanese'},
+    'https://hachyderm.io': {'Language': 'English'},
+    'https://infosec.exchange': {'Language': 'English'},
+    'https://planet.moe': {'Language': 'Korean'},
+    'https://social.vivaldi.net': {'Language': 'English'},
+    'https://techhub.social': {'Language': 'English'},
+    'https://piaille.fr': {'Language': 'French'},
+    'https://mastodon.gamedev.place': {'Language': 'English'},
+    'https://mastodon.nl': {'Language': 'Dutch'},
+    'https://norden.social': {'Language': 'English'},
+    'https://alive.bar': {'Language': 'Chinese'},
+    'https://mathstodon.xyz': {'Language': 'English'},
+    'https://kolektiva.social': {'Language': 'English'},
+    'https://universeodon.com': {'Language': 'English'},
+    'https://mastodonapp.uk': {'Language': 'English'},
+    'https://mastodon.uno': {'Language': 'Italian'},
+}
+
+instance_tag_metadata = {
+    'https://mstdn.social': {'Tag': 'General'},
+    'https://mastodon.social': {'Tag': 'General'},
+    'https://mas.to': {'Tag': 'General'},
+    'https://mstdn.jp': {'Tag': 'General'},
+    'https://hachyderm.io': {'Tag': 'Technology'},
+    'https://infosec.exchange': {'Tag': 'Technology'},
+    'https://planet.moe': {'Tag': 'None'},
+    'https://social.vivaldi.net': {'Tag': 'General'},
+    'https://techhub.social': {'Tag': 'Technology'},
+    'https://piaille.fr': {'Tag': 'General'},
+    'https://mastodon.gamedev.place': {'Tag': 'Gaming'},
+    'https://mastodon.nl': {'Tag': 'General'},
+    'https://norden.social': {'Tag': 'Regional'},
+    'https://alive.bar': {'Tag': 'None'},
+    'https://mathstodon.xyz': {'Tag': 'Technology'},
+    'https://kolektiva.social': {'Tag': 'Activism'},
+    'https://universeodon.com': {'Tag': 'General'},
+    'https://mastodonapp.uk': {'Tag': 'Regional'},
+    'https://mastodon.uno': {'Tag': 'General'},
+}
+
+language_color_map = {
+    'English': '#1f77b4',
+    'Japanese': '#ff7f0e',
+    'Korean': '#2ca02c',
+    'French': '#d62728',
+    'Dutch': '#9467bd',
+    'Chinese': '#8c564b',
+    'German': '#e377c2',
+    'Italian': '#7f7f7f'
+}
+
+tag_color_map = {
+    'General': '#1f77b4',
+    'Technology': '#ff7f0e',
+    'Gaming': '#2ca02c',
+    'Regional': '#d62728',
+    'Activism': '#9467bd',
+    'None': '#8c564b'
+}
+
+
 app.layout = html.Div(children=[
-    # Header row with GitHub icon on the left and title centered
+
     html.Div([
         html.A(
             html.Img(
@@ -53,7 +119,7 @@ app.layout = html.Div(children=[
         "margin-bottom": "10px"
     }),
 
-    # Tabs for switching between views
+
     dcc.Tabs(
         id="tabs",
         value="data-tab",
@@ -64,7 +130,7 @@ app.layout = html.Div(children=[
         style={"font-size": "16px", "font-family": "Arial, sans-serif", "line-height": "0px"}
     ),
 
-    # Content that updates based on selected tab
+
     html.Div(id="tab-content")
 ])
 
@@ -151,7 +217,9 @@ def render_tab_content(selected_tab):
             dcc.Graph(id="correlation-matrix", style={"width": "100%", "height": "800px"}),
 
             # Network Graph for Correlation
-            dcc.Graph(id="correlation-network", style={"width": "100%", "height": "1000px"})
+            dcc.Graph(id="correlation-network", style={"width": "100%", "height": "500px"}),
+
+            dcc.Graph(id="correlation-network-tag", style={"width": "100%", "height": "500px"})
         ])
 
 
@@ -222,18 +290,17 @@ def update_data_charts(start_date, end_date, ema_option):
 
 @app.callback(
     [Output("correlation-matrix", "figure"),
-     Output("correlation-network", "figure")],
+     Output("correlation-network", "figure"),
+     Output("correlation-network-tag", "figure")],
     [Input("correlation-date-picker", "start_date"),
      Input("correlation-date-picker", "end_date"),
      Input("ema-toggle", "value"),
      Input("data-type-selector", "value")]
 )
 def update_correlation_analysis(start_date, end_date, ema_option, data_type):
-    """Fetch selected data and compute both the correlation matrix and network graph."""
     if not start_date or not end_date:
         return {}, {}
 
-    # Determine which dataset to use
     collection_map = {
         "active_users": dailyactiveusers_collection,
         "post_count": postsperday_collection,
@@ -241,7 +308,6 @@ def update_correlation_analysis(start_date, end_date, ema_option, data_type):
     }
     selected_collection = collection_map[data_type]
 
-    # Query selected dataset
     cursor = selected_collection.find(
         {"date": {"$gte": start_date, "$lte": end_date}},
         {"_id": 0, "date": 1, "instance": 1, data_type: 1}
@@ -259,7 +325,6 @@ def update_correlation_analysis(start_date, end_date, ema_option, data_type):
 
     correlation_matrix = selected_data_per_day.corr(method='spearman')
 
-    # Create Heatmap with Labels
     fig_heatmap = go.Figure(data=go.Heatmap(
         z=correlation_matrix.values,
         x=correlation_matrix.columns.tolist(),
@@ -270,7 +335,6 @@ def update_correlation_analysis(start_date, end_date, ema_option, data_type):
         hoverongaps=False
     ))
 
-    # Add Text Annotations to Each Cell
     annotations = []
     for i in range(len(correlation_matrix.index)):
         for j in range(len(correlation_matrix.columns)):
@@ -293,10 +357,7 @@ def update_correlation_analysis(start_date, end_date, ema_option, data_type):
         height=800
     )
 
-    # NETWORK GRAPH IMPLEMENTATION
     G = nx.Graph()
-
-    # Convert correlation matrix to adjacency matrix, treating negative correlations as 0
     correlation_matrix_clipped = correlation_matrix.clip(lower=0)
 
     epsilon = 0.01
@@ -304,14 +365,12 @@ def update_correlation_analysis(start_date, end_date, ema_option, data_type):
         for j, instance2 in enumerate(correlation_matrix_clipped.columns):
             if i != j:
                 weight = correlation_matrix_clipped.iloc[i, j]
-                if weight > 0:  # Ignore negative correlations
+                if weight > 0:
                     transformed_weight = 1 / (abs(weight) + epsilon)
                     G.add_edge(instance1, instance2, weight=transformed_weight)
 
-    # **Use Kamada-Kawai layout**
     pos = nx.kamada_kawai_layout(G, weight="weight")
 
-    # Convert positions to lists for Plotly
     edge_x, edge_y = [], []
     for edge in G.edges(data=True):
         x0, y0 = pos[edge[0]]
@@ -319,40 +378,103 @@ def update_correlation_analysis(start_date, end_date, ema_option, data_type):
         edge_x.extend([x0, x1, None])
         edge_y.extend([y0, y1, None])
 
-    node_x, node_y, node_text = [], [], []
+    node_x, node_y, node_text, node_color = [], [], [], []
     for node in G.nodes():
         x, y = pos[node]
+        lang = instance_metadata.get(node, {}).get('Language', 'English')
+        color = language_color_map.get(lang, '#1f77b4')  # default blue
+
         node_x.append(x)
         node_y.append(y)
         node_text.append(node)
+        node_color.append(color)
 
-    fig_network = go.Figure(data=[
-        go.Scatter(
-            x=edge_x, y=edge_y,
-            mode="lines",
-            line=dict(width=0.5, color="gray"),
-            hoverinfo="none"
-        ),
-        go.Scatter(
-            x=node_x, y=node_y,
+    fig_network = go.Figure()
+
+    fig_network.add_trace(go.Scatter(
+        x=edge_x, y=edge_y,
+        mode="lines",
+        line=dict(width=0.5, color="gray"),
+        hoverinfo="none",
+        showlegend=False
+    ))
+
+    # Add nodes grouped by language for legend
+    from collections import defaultdict
+    grouped_nodes = defaultdict(list)
+    grouped_coords = defaultdict(list)
+
+    for i, node in enumerate(G.nodes()):
+        lang = instance_metadata.get(node, {}).get('Language', 'English')
+        grouped_nodes[lang].append(node)
+        grouped_coords[lang].append((node_x[i], node_y[i]))
+
+    for lang, nodes in grouped_nodes.items():
+        coords = grouped_coords[lang]
+        fig_network.add_trace(go.Scatter(
+            x=[x for x, y in coords],
+            y=[y for x, y in coords],
             mode="markers+text",
-            marker=dict(size=20, color="red"),
-            text=node_text,
+            marker=dict(size=20, color=language_color_map.get(lang, '#1f77b4')),
+            text=nodes,
             textposition="top center",
-            hoverinfo="text"
-        )
-    ])
+            hoverinfo="text",
+            name=lang
+        ))
 
     fig_network.update_layout(
-        title="Network Graph of Spearman Correlations",
-        showlegend=False,
+        title="Network Graph of Spearman Correlations (Language Colored)",
+        showlegend=True,
+        legend=dict(title="Language", orientation="h", yanchor="bottom"),
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        height=1000
+        height=500
     )
 
-    return fig_heatmap, fig_network
+    #TAG BASED
 
+    fig_network_tag = go.Figure()
+
+    # node_color_tag = []
+    grouped_tag_nodes = defaultdict(list)
+    grouped_tag_coords = defaultdict(list)
+
+    for i, node in enumerate(G.nodes()):
+        tag = instance_tag_metadata.get(node, {}).get('Tag', 'None')
+        grouped_tag_nodes[tag].append(node)
+        grouped_tag_coords[tag].append((node_x[i], node_y[i]))
+
+    fig_network_tag.add_trace(go.Scatter(
+        x=edge_x, y=edge_y,
+        mode="lines",
+        line=dict(width=0.5, color="gray"),
+        hoverinfo="none",
+        showlegend=False
+    ))
+
+    for tag, nodes in grouped_tag_nodes.items():
+        coords = grouped_tag_coords[tag]
+        fig_network_tag.add_trace(go.Scatter(
+            x=[x for x, y in coords],
+            y=[y for x, y in coords],
+            mode="markers+text",
+            marker=dict(size=20, color=tag_color_map.get(tag, '#1f77b4')),
+            text=nodes,
+            textposition="top center",
+            hoverinfo="text",
+            name=tag
+        ))
+
+    fig_network_tag.update_layout(
+        title="Network Graph of Spearman Correlations (Tag Colored)",
+        showlegend=True,
+        legend=dict(title="Tag", orientation="h", yanchor="bottom"),
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        height=500
+    )
+
+    return fig_heatmap, fig_network, fig_network_tag
 
 if __name__ == "__main__":
     app.run_server(host="0.0.0.0", port=8050)
